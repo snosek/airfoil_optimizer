@@ -4,10 +4,11 @@ import neuralfoil as nf
 import aerosandbox as asb
 
 # genetic algorithm config
-POP_SIZE = 50
+POP_SIZE = 60
 N_GEN = 50
-MUTATION_RATE = 0.3
-ELITISM = 0.05
+MUTATION_RATE = 0.5
+ELITISM_RATIO = 0.1
+DIVERSITY_NUMBER = int(POP_SIZE * 0.4)
 
 # NeuralFoil config
 ALPHA = 5  # degrees
@@ -16,9 +17,9 @@ MODEL_SIZE = "xxxlarge"
 CL_MIN = 0.5
 
 # NACA parameter ranges
-M_RANGE = (0.00, 0.09)  # maximum camber
-P_RANGE = (0.0, 0.9)    # position of max camber
-T_RANGE = (0.01, 0.99)  # thickness
+M_RANGE = (0, 9)  # maximum camber
+P_RANGE = (0, 9)    # position of max camber
+T_RANGE = (1, 99)  # thickness
 
 def random_individual():
     """Generate random NACA parameters [m, p, t]"""
@@ -31,7 +32,7 @@ def random_individual():
 def decode_individual(params):
     """Convert parameters to NACA airfoil"""
     m, p, t = params
-    digits = f"{int(m*100):01d}{int(p*10):01d}{int(t*100):02d}"
+    digits = f"{int(m):01d}{int(p):01d}{int(t):02d}"
     return asb.Airfoil(name=f"NACA{digits}")
 
 def evaluate(params):
@@ -64,7 +65,7 @@ def crossover(p1, p2):
 def mutate(params):
     """Gaussian mutation with parameter-specific standard deviations"""
     params = params.copy()
-    std_devs = [0.02, 0.1, 0.02]  # different mutation rates for m, p, t
+    std_devs = [0.2, 0.1, 5]  # different mutation rates for m, p, t
     ranges = [M_RANGE, P_RANGE, T_RANGE]
     
     for i in range(3):
@@ -91,14 +92,13 @@ for gen in range(N_GEN):
     # Create next generation
     new_population = []
     
-    # Keep best 5% (elitism)
-    num_elites = max(1, int(ELITISM * POP_SIZE))
+    num_elites = max(1, int(ELITISM_RATIO * POP_SIZE))
     elite_indices = np.argsort(fitness)[:num_elites]
     new_population.extend(population[i] for i in elite_indices)
     
     # Add random individuals every 5 generations for diversity
     if gen % 5 == 0 and gen > 0:
-        new_population.extend(random_individual() for _ in range(min(20, POP_SIZE - len(new_population))))
+        new_population.extend(random_individual() for _ in range(min(DIVERSITY_NUMBER, POP_SIZE - len(new_population))))
     
     # Fill remaining population with crossover + mutation
     while len(new_population) < POP_SIZE:
@@ -122,6 +122,5 @@ print("\n=== BEST NACA AIRFOIL ===")
 print(f"Parameters: m={best_params[0]:.3f}, p={best_params[1]:.3f}, t={best_params[2]:.3f}")
 print(f"CL = {aero['CL'][0]:.4f}, CD = {aero['CD'][0]:.4f}")
 print(f"CL/CD = {aero['CL'][0]/aero['CD'][0]:.2f}")
-print(f"Confidence = {aero['analysis_confidence']}")
 
 best_airfoil.draw(show=True)
