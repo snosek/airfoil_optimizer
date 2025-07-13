@@ -4,7 +4,7 @@ import neuralfoil as nf
 import aerosandbox as asb
 
 # genetic algorithm config
-POP_SIZE = 60
+POP_SIZE = 50
 N_GEN = 50
 MUTATION_RATE = 0.5
 ELITISM_RATIO = 0.1
@@ -33,7 +33,7 @@ def decode_individual(params):
     """Convert parameters to NACA airfoil"""
     m, p, t = params
     digits = f"{int(m):01d}{int(p):01d}{int(t):02d}"
-    return asb.Airfoil(name=f"NACA{digits}")
+    return asb.Airfoil(name=f"naca{digits}")
 
 def evaluate(params):
     """Evaluate fitness: maximize CL/CD ratio with CL constraint"""
